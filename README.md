@@ -221,4 +221,76 @@ helmforge --debug compose-to-chart -i docker-compose.yaml -o ./output-chart
 - 提供更友好的用户体验和错误处理
 
 ## 贡献指南
-欢迎提交 Issue 和 Pull Request！
+欢迎提交 Issue 和 Pull Request！## Git Submodules 使用说明
+
+HelmForge 项目使用 Git Submodules 管理第三方依赖。以下是常用操作指南：
+
+### 初次克隆项目
+
+```bash
+# 递归克隆项目（包含 submodules）
+git clone --recursive https://github.com/wenwenxiong/HelmForge.git
+cd HelmForge
+```
+
+### 从现有项目初始化 submodules
+
+如果您已经克隆了项目但没有包含 submodules：
+
+```bash
+cd HelmForge
+git submodule init
+git submodule update
+```
+
+### 更新 submodules 到最新版本
+
+```bash
+# 更新所有 submodules
+git submodule update --remote --merge
+
+# 或者单独更新特定 submodule
+cd third-party/kompose
+git pull origin main
+cd ../..
+git add third-party/kompose
+git commit -m "chore: update kompose submodule"
+```
+
+### 切换 submodule 版本
+
+```bash
+# 切换到特定版本
+cd third-party/kompose
+git checkout v1.34.0
+cd ../..
+git add third-party/kompose
+git commit -m "chore: pin kompose to v1.34.0"
+```
+
+### 查看 submodule 状态
+
+```bash
+# 查看当前 submodule 版本
+git submodule status
+
+# 查看 submodule 配置
+cat .gitmodules
+```
+
+### 子项目模块说明
+
+- **third-party/helmify**: v0.4.19 - Kubernetes 资源转 Helm Chart 工具
+- **third-party/kompose**: v1.38.0 - Docker Compose 转 Kubernetes 资源工具
+
+### 常见问题
+
+**问题**: submodule 为空或显示错误
+**解决**: 运行 `git submodule update --init --recursive`
+
+**问题**: submodule 版本过旧
+**解决**: 运行 `git submodule update --remote --merge`
+
+**问题**: 构建失败，找不到包
+**解决**: 确保运行了 `go mod tidy` 和 `go build`
+
