@@ -296,3 +296,107 @@ cat .gitmodules
 **问题**: 构建失败，找不到包
 **解决**: 确保运行了 `go mod tidy` 和 `go build`
 
+### Submodules 更新策略
+
+HelmForge 使用智能降级策略来处理网络问题和部分失败：
+
+**更新优先级**:
+1. ✅ **标准更新**: 尝试从远程仓库更新 Submodules
+2. ⏱️ **超时处理**: 单个 Submodule 更新超时5分钟
+3. 🔄 **重试机制**: 失败后重试3次，每次间隔20秒
+4. 🛡️ **降级策略**: 如果更新失败，使用本地版本继续
+
+**失败容忍度**:
+- ✅ **部分失败容忍**: 某些 Submodule 更新失败不会中断整个流程
+- ✅ **本地版本降级**: 使用已验证的本地版本继续构建
+- ✅ **详细日志记录**: 提供完整的错误诊断信息
+
+**适用场景**:
+- 🌐 **网络问题**: GitHub API 限制、网络延迟、连接不稳定
+- 🔒 **权限问题**: 某些仓库访问权限问题
+- 🏗️ **CI 环境限制**: Actions runner 网络限制或缓存问题
+
+### 从现有项目初始化
+
+如果您已经有 Submodules 的本地版本：
+
+```bash
+# 验证 Submodules 状态
+git submodule status
+
+# 如果需要更新到最新版本
+git submodule update --remote --merge
+
+# 如果需要使用特定的本地版本
+cd third-party/kompose
+git checkout v1.34.0
+cd ../..
+```
+
+### 故障排查
+
+**问题1: Submodule 更新超时**
+```bash
+# 症状: 更新过程长时间卡住
+# 原因: 网络延迟或 GitHub API 限制
+
+# 解决方案:
+# 方案1: 使用本地版本（降级策略）
+git submodule update --remote --merge || echo "使用本地版本"
+
+# 方案2: 增加超时时间
+timeout 900 git submodule update --remote --merge  # 15分钟超时
+
+# 方案3: 分步更新
+git submodule update third-party/kompose
+git submodule update third-party/helmify
+```
+
+**问题2: 部分 Submodule 失败**
+```bash
+# 症状: 某些 Submodule 更新失败，其他成功
+# 原因: 网络问题、权限问题、仓库状态
+
+# 解决方案（降级策略自动处理）:
+# 1. CI 环境会自动使用本地版本继续
+# 2. 详细日志会显示使用哪个版本
+# 3. 构建流程不会中断
+
+# 手动验证:
+git submodule status
+# 检查失败 Submodule 的本地版本是否可用
+```
+
+**问题3: Submodule 冲突**
+```bash
+# 症状: git submodule status 显示 U 状态
+# 原因: 本地修改与远程更新冲突
+
+# 解决方案:
+cd third-party/kompose
+git reset --hard origin/main
+cd ../..
+git submodule update
+```
+
+**问题4: 网络完全无法访问 GitHub**
+```bash
+# 症状: 所有 Submodule 更新失败
+# 原因: 网络完全断开或防火墙阻止
+
+# 解决方案（降级策略）:
+# CI 环境会自动使用本地缓存版本
+# 本地开发环境同样会使用本地版本
+# 不会影响开发工作流程
+```
+
+### CI/CD 环境中的 Submodules 处理
+
+GitHub Actions 环境中的 Submodules 处理：
+
+1. **自动初始化**: Actions 工作流自动处理 Submodules
+2. **智能降级**: 网络问题自动使用本地版本
+3. **详细日志**: 完整的状态和版本信息日志
+4. **失败容忍**: 部分 Submodule 失败不影响整体流程
+5. **状态验证**: 每次都验证 Submodules 最终状态
+

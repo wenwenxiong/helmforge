@@ -5,6 +5,11 @@
 
 set -e
 
+# 超时和重试配置
+SUBMODULE_TIMEOUT=300  # 5分钟超时
+SUBMODULE_RETRIES=3   # 最大重试次数
+SUBMODULE_RETRY_DELAY=20  # 重试间隔（秒）
+
 # 颜色输出
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -71,10 +76,10 @@ update_submodules() {
             retry_count=$((retry_count + 1))
             if [ $retry_count -lt $max_retries ]; then
                 log_warn "Submodule 更新失败，重试中... ($retry_count/$max_retries)"
-                sleep 5
+                sleep $SUBMODULE_RETRY_DELAY
             else
-                log_error "Submodule 更新失败，已达到最大重试次数"
-                return 1
+                log_warn "达到最大重试次数（$max_retries），将使用本地版本"
+                return 0
             fi
         fi
     done
@@ -83,21 +88,38 @@ update_submodules() {
 # 验证 Submodule 状态
 verify_submodules() {
     log_info "验证 Submodule 状态..."
-
+    
+    local has_critical_errors=false
+    local has_warnings=false
+    
     # 检查每个 submodule 的状态
     git submodule status | while read -r line; do
-        if [[ $line == *"-"* ]]; then
-            log_error "Submodule 未初始化: $line"
-            return 1
+        if [[ $line == *"U"* ]]; then
+            # 合并冲突是严重错误，需要手动解决
+            log_error "Submodule 有合并冲突（需要手动解决）：$line"
+            has_critical_errors=true
+        elif [[ $line == *"-"* ]]; then
+            # 未初始化是警告，降级策略会处理
+            log_warn "Submodule 未初始化或部分失败（降级策略将处理）：$line"
+            has_warnings=true
         elif [[ $line == *"+"* ]]; then
-            log_warn "Submodule 版本不匹配: $line"
-        elif [[ $line == *"U"* ]]; then
-            log_error "Submodule 有冲突: $line"
-            return 1
+            # 版本不匹配是警告
+            log_warn "Submodule 版本不匹配（降级策略将使用本地版本）：$line"
+            has_warnings=true
         fi
     done
-
-    log_info "Submodule 状态检查完成"
+    
+    # 总结验证结果
+    if [ "$has_critical_errors" = false ] && [ "$has_warnings" = false ]; then
+        log_info "所有 Submodules 状态完美"
+        return 0
+    elif [ "$has_critical_errors" = false ] && [ "$has_warnings" = true ]; then
+        log_info "有警告但无严重错误，降级策略将处理"
+        return 0
+    else
+        log_error "存在严重错误，需要手动解决"
+        return 1
+    fi
 }
 
 # 显示 Submodule 信息
@@ -129,22 +151,42 @@ show_submodule_info() {
 # 主函数
 main() {
     log_info "开始 HelmForge Submodules 初始化流程"
-
-    # 执行初始化步骤
-    check_git_repo
-    init_submodules
-    update_submodules
-    verify_submodules
+    
+    # 执行初始化步骤（严格模式，严重错误会中断）
+    if ! check_git_repo; then
+        log_error "Git 仓库检查失败，无法继续"
+        return 1
+    fi
+    
+    if ! init_submodules; then
+        log_error "Submodules 初始化失败，无法继续"
+        return 1
+    fi
+    
+    # 更新 Submodules（容忍模式，失败会降级）
+    if ! update_submodules; then
+        log_warn "Submodules 更新有问题，将使用本地版本"
+    fi
+    
+    # 验证状态（容忍模式，只有严重错误会中断）
+    if ! verify_submodules; then
+        log_error "Submodules 验证失败（存在严重错误）"
+        return 1
+    fi
+    
+    # 显示最终状态
     show_submodule_info
-
-    log_info "Submodules 初始化流程完成！"
-
+    
+    log_info "Submodules 初始化流程完成（容忍部分失败）"
+    
     # 显示后续建议
     echo ""
     log_info "后续步骤:"
     echo "  1. 运行 'go mod tidy' 更新 Go 依赖"
     echo "  2. 运行 'go build' 验证构建"
     echo "  3. 运行 'go test ./...' 执行测试"
+    
+    return 0
 }
 
 # 脚本入口

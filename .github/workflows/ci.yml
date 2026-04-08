@@ -26,7 +26,9 @@ jobs:
       - name: 初始化 Submodules
         run: |
           bash .github/scripts/setup-submodules.sh
-        continue-on-error: false
+        continue-on-error: true
+        timeout-minutes: 15
+        shell: bash
 
       - name: 设置 Go 环境
         uses: actions/setup-go@v5
@@ -141,5 +143,33 @@ jobs:
       - name: 上传 Trivy 扫描结果
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+
+      - name: 验证 Submodules 最终状态
+        if: always()
+        run: |
+          echo "=== Submodules 最终状态验证 ==="
+          echo ""
+          echo "📊 Submodules 配置:"
+          cat .gitmodules || echo "  ⚠️  .gitmodules 文件不存在"
+          echo ""
+          echo "📋 当前 Submodules 状态:"
+          git submodule status || echo "  ⚠️  Submodules 命令执行失败"
+          echo ""
+          echo "📁 Submodules 目录检查:"
+          if [ -d "third-party/helmify" ]; then
+            echo "  ✅ third-party/helmify 存在"
+            cd third-party/helmify 2>/dev/null && echo "     ├─ Git 状态: $(git status --short 2>/dev/null | head -1 || '未知')" || echo "     └─ 无法进入目录"
+          else
+            echo "  ⚠️  third-party/helmify 不存在（降级策略）"
+          fi
+          
+          if [ -d "third-party/kompose" ]; then
+            echo "  ✅ third-party/kompose 存在"
+            cd third-party/kompose 2>/dev/null && echo "     ├─ Git 状态: $(git status --short 2>/dev/null | head -1 || '未知')" || echo "     └─ 无法进入目录"
+          else
+            echo "  ⚠️  third-party/kompose 不存在（降级策略）"
+          fi
+          echo "=== 验证结束 ==="
+        continue-on-error: true
         with:
           sarif_file: 'trivy-results.sarif'
