@@ -221,7 +221,9 @@ helmforge --debug compose-to-chart -i docker-compose.yaml -o ./output-chart
 - 提供更友好的用户体验和错误处理
 
 ## 贡献指南
-欢迎提交 Issue 和 Pull Request！## Git Submodules 使用说明
+欢迎提交 Issue 和 Pull Request！
+
+## Git Submodules 使用说明
 
 HelmForge 项目使用 Git Submodules 管理第三方依赖。以下是常用操作指南：
 
