@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Go 依赖更新
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    allow:
+      # 允许直接依赖更新
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # 忽略特定版本的依赖
+      - dependency-name: "github.com/kubernetes/kompose"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "github.com/arttor/helmify"
+        update-types: ["version-update:semver-major"]
+
+  # Docker 基础镜像更新
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    versioning-strategy: lockfile-only
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"

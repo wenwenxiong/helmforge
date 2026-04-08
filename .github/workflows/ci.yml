@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  # 代码检查和测试
+  test:
+    name: Test (Go ${{ matrix.go-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.20, 1.21, 1.22]
+      fail-fast: false
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: 初始化 Submodules
+        run: |
+          bash .github/scripts/setup-submodules.sh
+        continue-on-error: false
+
+      - name: 设置 Go 环境
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: 缓存 Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+      - name: 安装依赖
+        run: |
+          go mod download
+          go mod verify
+
+      - name: 检查代码格式
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "代码格式不符合 gofmt 标准："
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: 运行 go vet
+        run: go vet ./...
+
+      - name: 运行 golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          config: .github/golangci.yml
+          skip-build-cache: false
+          skip-pkg-cache: false
+
+      - name: 运行单元测试
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: 上传测试覆盖率
+        uses: codecov/codecov-action@v4
+        if: matrix.go-version == '1.22'
+        with:
+          files: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: 构建项目
+        run: |
+          go build -v -ldflags="-w -s" -o helmforge ./cmd/helmforge
+          ./helmforge --version || true
+
+  # Docker 构建和推送（仅 main 分支）
+  docker:
+    name: Docker Build and Push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: test
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 提取元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: wenwenxiong/helmforge
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送 Docker 镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+
+      - name: 扫描镜像安全漏洞
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wenwenxiong/helmforge:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: 上传 Trivy 扫描结果
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
