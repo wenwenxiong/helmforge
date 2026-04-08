@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  helmforge:
+    build:
+      context: .
+      target: builder
+    image: helmforge:latest
+    container_name: helmforge
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HELM_HOME=/app/.helm
+    working_dir: /app
+    command: --help
+    networks:
+      - helmforge-network
+
+  helmforge-production:
+    build:
+      context: .
+    image: helmforge:production
+    container_name: helmforge-production
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./output-chart:/app/output-chart
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - HELM_HOME=/app/.helm
+    working_dir: /app
+    command: --help
+    networks:
+      - helmforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "helmforge", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  helmforge-network:
+    driver: bridge
+    name: helmforge-network

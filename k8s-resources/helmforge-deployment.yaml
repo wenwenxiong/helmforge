@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: G:\gowork\src\github.com\wenwenxiong\HelmForge\.trae\skills\docker-compose-to-helm-chart\scripts\kompose convert -f G:/gowork/src/github.com/wenwenxiong/HelmForge/docker-compose.yaml -o G:/gowork/src/github.com/wenwenxiong/HelmForge/k8s-resources
+    kompose.version: 1.38.0 (a8f5d1cbd)
+  labels:
+    io.kompose.service: helmforge
+  name: helmforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: helmforge
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: G:\gowork\src\github.com\wenwenxiong\HelmForge\.trae\skills\docker-compose-to-helm-chart\scripts\kompose convert -f G:/gowork/src/github.com/wenwenxiong/HelmForge/docker-compose.yaml -o G:/gowork/src/github.com/wenwenxiong/HelmForge/k8s-resources
+        kompose.version: 1.38.0 (a8f5d1cbd)
+      labels:
+        io.kompose.service: helmforge
+    spec:
+      containers:
+        - args:
+            - --help
+          env:
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+            - name: HELM_HOME
+              value: /app/.helm
+          image: helmforge:latest
+          name: helmforge
+          volumeMounts:
+            - mountPath: /app
+              name: helmforge-cm0
+          workingDir: /app
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            name: helmforge-cm0
+          name: helmforge-cm0

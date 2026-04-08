@@ -1,0 +1,45 @@
+# 忽略构建产物
+helmforge
+output-chart/
+
+# 忽略依赖目录
+go.sum
+
+# 忽略IDE和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 忽略操作系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略日志文件
+*.log
+logs/
+
+# 忽略测试文件
+*_test.go
+testdata/
+
+# 忽略文档文件
+*.md
+docs/
+
+# 忽略临时文件
+tmp/
+temp/
+
+# 忽略环境文件
+.env
+.env.local
+.env.*.local
+
+# 忽略git文件
+.git/
+.gitignore
+
+# 忽略Trae IDE文件
+.trae/

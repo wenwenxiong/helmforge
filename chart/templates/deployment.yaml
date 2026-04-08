@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}-helmforge
+  labels:
+    io.kompose.service: helmforge
+  {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    kompose.cmd: G:\gowork\src\github.com\wenwenxiong\HelmForge\.trae\skills\docker-compose-to-helm-chart\scripts\kompose
+      convert -f docker-compose.yaml -o k8s-resources
+    kompose.version: 1.38.0 (a8f5d1cbd)
+spec:
+  replicas: {{ .Values.helmforge.replicas }}
+  strategy:
+    type: {{ .Values.helmforge.strategy.type | quote }}
+  selector:
+    matchLabels:
+      io.kompose.service: helmforge
+    {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: helmforge
+      {{- include "chart.selectorLabels" . | nindent 8 }}
+      annotations:
+        kompose.cmd: G:\gowork\src\github.com\wenwenxiong\HelmForge\.trae\skills\docker-compose-to-helm-chart\scripts\kompose
+          convert -f docker-compose.yaml -o k8s-resources
+        kompose.version: 1.38.0 (a8f5d1cbd)
+    spec:
+      containers:
+      - args: {{- toYaml .Values.helmforge.helmforge.args | nindent 8 }}
+        env:
+        - name: DOCKER_HOST
+          value: {{ quote .Values.helmforge.helmforge.env.dockerHost }}
+        - name: HELM_HOME
+          value: {{ quote .Values.helmforge.helmforge.env.helmHome }}
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.helmforge.helmforge.image.repository }}:{{ .Values.helmforge.helmforge.image.tag
+          | default .Chart.AppVersion }}
+        name: helmforge
+        resources: {}
+        volumeMounts:
+        - mountPath: /app
+          name: helmforge-cm0
+        workingDir: /app
+      nodeSelector: {{- toYaml .Values.helmforge.nodeSelector | nindent 8 }}
+      restartPolicy: Always
+      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      tolerations: {{- toYaml .Values.helmforge.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.helmforge.topologySpreadConstraints
+        | nindent 8 }}
+      volumes:
+      - configMap:
+          name: helmforge-cm0
+        name: helmforge-cm0

@@ -1,0 +1,4 @@
+kubernetesClusterDomain: cluster.local
+pvc:
+  helmforgeProductionClaim2:
+    storageRequest: 100Mi

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "chart.fullname" . }}-helmforge-production-claim2
+  labels:
+    io.kompose.service: helmforge-production-claim2
+  {{- include "chart.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.pvc.helmforgeProductionClaim2.storageRequest | quote }}

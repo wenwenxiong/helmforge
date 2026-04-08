@@ -1,0 +1,6 @@
+apiVersion: v2
+name: helmforge
+version: 1.0.0
+description: Helm Chart for HelmForge application
+type: application
+appVersion: "1.0.0"

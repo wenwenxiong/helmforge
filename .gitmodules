@@ -1,0 +1,6 @@
+[submodule "third-party/helmify"]
+	path = third-party/helmify
+	url = https://github.com/arttor/helmify.git
+[submodule "third-party/kompose"]
+	path = third-party/kompose
+	url = https://github.com/kubernetes/kompose.git

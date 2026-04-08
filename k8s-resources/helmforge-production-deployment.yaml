@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: G:\gowork\src\github.com\wenwenxiong\HelmForge\.trae\skills\docker-compose-to-helm-chart\scripts\kompose convert -f G:/gowork/src/github.com/wenwenxiong/HelmForge/docker-compose.yaml -o G:/gowork/src/github.com/wenwenxiong/HelmForge/k8s-resources
+    kompose.version: 1.38.0 (a8f5d1cbd)
+  labels:
+    io.kompose.service: helmforge-production
+  name: helmforge-production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: helmforge-production
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: G:\gowork\src\github.com\wenwenxiong\HelmForge\.trae\skills\docker-compose-to-helm-chart\scripts\kompose convert -f G:/gowork/src/github.com/wenwenxiong/HelmForge/docker-compose.yaml -o G:/gowork/src/github.com/wenwenxiong/HelmForge/k8s-resources
+        kompose.version: 1.38.0 (a8f5d1cbd)
+      labels:
+        io.kompose.service: helmforge-production
+    spec:
+      containers:
+        - args:
+            - --help
+          env:
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+            - name: HELM_HOME
+              value: /app/.helm
+          image: helmforge:production
+          livenessProbe:
+            exec:
+              command:
+                - helmforge
+                - --help
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+          name: helmforge-production
+          volumeMounts:
+            - mountPath: /app
+              name: helmforge-production-cm0
+            - mountPath: /app/output-chart
+              name: helmforge-production-claim2
+          workingDir: /app
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            name: helmforge-production-cm0
+          name: helmforge-production-cm0
+        - name: helmforge-production-claim2
+          persistentVolumeClaim:
+            claimName: helmforge-production-claim2
