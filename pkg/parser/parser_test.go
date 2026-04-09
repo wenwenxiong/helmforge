@@ -79,6 +79,18 @@ networks:
 	require.True(t, ok, "应该存在 api 服务")
 	assert.Equal(t, "node:16-alpine", apiService.Image, "镜像应该正确")
 	assert.Len(t, apiService.Ports, 1, "应该有1个端口映射")
+
+	// 添加字段验证
+	t.Logf("API服务字段验证:")
+	t.Logf("  Environment: %v (len: %d, isNil: %v)",
+		apiService.Environment, len(apiService.Environment), apiService.Environment == nil)
+	t.Logf("  EnvVars: %v (len: %d)",
+		apiService.EnvVars, len(apiService.EnvVars))
+	t.Logf("  DependsOn: %v (len: %d)",
+		apiService.DependsOn, len(apiService.DependsOn))
+	t.Logf("  Build: %v", apiService.Build)
+	t.Logf("  Ports: %v", apiService.Ports)
+
 	assert.Len(t, apiService.DependsOn, 1, "应该有1个依赖")
 	assert.Equal(t, "db", apiService.DependsOn[0], "依赖应该正确")
 
