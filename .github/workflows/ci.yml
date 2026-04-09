@@ -83,6 +83,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: 构建项目
+        working-directory: ./
         run: |
           go build -v -ldflags="-w -s" -o helmforge ./cmd/helmforge
           ./helmforge --version || true
