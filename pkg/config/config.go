@@ -359,24 +359,26 @@ func enhanceHelpersTpl(filePath string) error {
 			return err
 		}
 		content = string(fileContent)
-	} else {
-		// 文件不存在，创建新内容
-		content = `{{/*
+	}
+
+	// 确保基础helpers存在
+	baseHelpers := map[string]string{
+		"helmforge.name": `{{/*
 Chart name
 */}}
 {{- define "helmforge.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
-
-{{/*
+`,
+		"helmforge.fullname": `{{/*
 Chart full name
 */}}
 {{- define "helmforge.fullname" -}}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
 {{- end }}
-
-{{/*
+`,
+		"helmforge.image": `{{/*
 Container image
 */}}
 {{- define "helmforge.image" -}}
@@ -385,14 +387,21 @@ Container image
 {{- $tag := .Values.image.tag | default .Chart.AppVersion }}
 {{- printf "%s/%s:%s" $registry $repository $tag }}
 {{- end }}
-
-{{/*
+`,
+		"helmforge.service.port": `{{/*
 Service port
 */}}
 {{- define "helmforge.service.port" -}}
 {{- .Values.service.port | default 8080 }}
 {{- end }}
-`
+`,
+	}
+
+	// 添加缺失的基础helpers
+	for name, helperDef := range baseHelpers {
+		if !strings.Contains(content, name) {
+			content = helperDef + "\n" + content
+		}
 	}
 
 	// 添加额外的 helper 函数
@@ -426,17 +435,22 @@ Database port
 {{- end }}
 `
 
-	// 检查是否已经包含额外的 helper 函数
-	if !strings.Contains(content, "helmforge.configmap.name") {
-		content += additionalHelpers
+	// 追加额外的helpers（如果不存在）
+	additionalHelperNames := []string{
+		"helmforge.configmap.name",
+		"helmforge.secret.name",
+		"helmforge.database.host",
+		"helmforge.database.port",
 	}
 
-	// 写回文件
-	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
-		return err
+	for _, name := range additionalHelperNames {
+		if !strings.Contains(content, name) {
+			content += additionalHelpers
+			break
+		}
 	}
 
-	return nil
+	return os.WriteFile(filePath, []byte(content), 0644)
 }
 
 // createNotesTxt 创建 NOTES.txt 文件

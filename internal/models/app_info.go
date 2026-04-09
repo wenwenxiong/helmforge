@@ -13,7 +13,8 @@ type Service struct {
 	Image       string             `json:"image,omitempty"`
 	Build       *BuildConfig       `json:"build,omitempty"`
 	Ports       []string           `json:"ports,omitempty"`
-	Environment map[string]string  `json:"environment,omitempty"`
+	Environment []string           `json:"environment,omitempty"`
+	EnvVars     map[string]string  `json:"env,omitempty"`
 	Volumes     []string           `json:"volumes,omitempty"`
 	Networks    []string           `json:"networks,omitempty"`
 	DependsOn   []string           `json:"depends_on,omitempty"`
@@ -22,9 +23,9 @@ type Service struct {
 
 // BuildConfig 构建配置结构
 type BuildConfig struct {
-	Context    string            `json:"context"`
-	Dockerfile string            `json:"dockerfile,omitempty"`
-	Args       map[string]string `json:"args,omitempty"`
+	Context    string   `json:"context"`
+	Dockerfile string   `json:"dockerfile,omitempty"`
+	Args       []string `json:"args,omitempty"`
 }
 
 // HealthcheckConfig 健康检查配置结构

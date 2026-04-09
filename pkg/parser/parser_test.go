@@ -70,8 +70,8 @@ networks:
 	assert.Equal(t, "nginx:latest", webService.Image, "镜像应该正确")
 	assert.Len(t, webService.Ports, 1, "应该有1个端口映射")
 	assert.Equal(t, "8080:80", webService.Ports[0], "端口映射应该正确")
-	assert.Len(t, webService.Environment, 1, "应该有1个环境变量")
-	assert.Equal(t, "localhost", webService.Environment["NGINX_HOST"], "环境变量应该正确")
+	assert.Len(t, webService.EnvVars, 1, "应该有1个环境变量")
+	assert.Equal(t, "localhost", webService.EnvVars["NGINX_HOST"], "环境变量应该正确")
 	assert.Len(t, webService.Volumes, 1, "应该有1个卷映射")
 
 	// 验证 api 服务
@@ -86,8 +86,8 @@ networks:
 	dbService, ok := config.Services["db"]
 	require.True(t, ok, "应该存在 db 服务")
 	assert.Equal(t, "postgres:13-alpine", dbService.Image, "镜像应该正确")
-	assert.Len(t, dbService.Environment, 3, "应该有3个环境变量")
-	assert.Equal(t, "secret", dbService.Environment["POSTGRES_PASSWORD"], "密码应该正确")
+	assert.Len(t, dbService.EnvVars, 3, "应该有3个环境变量")
+	assert.Equal(t, "secret", dbService.EnvVars["POSTGRES_PASSWORD"], "密码应该正确")
 }
 
 func TestParseDockerCompose_InvalidFile(t *testing.T) {
@@ -196,5 +196,5 @@ services:
 	assert.Equal(t, "./app", build.Context, "构建上下文应该正确")
 	assert.Equal(t, "Dockerfile.dev", build.Dockerfile, "Dockerfile 应该正确")
 	assert.Len(t, build.Args, 2, "构建参数应该有2个")
-	assert.Equal(t, "development", build.Args["BUILD_ENV"], "构建参数应该正确")
+	assert.Contains(t, build.Args, "BUILD_ENV=development", "应该包含BUILD_ENV参数")
 }
