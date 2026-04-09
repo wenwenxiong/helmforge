@@ -1,8 +1,6 @@
 module github.com/wenwenxiong/HelmForge
 
-go 1.24.0
-
-toolchain go1.24.10
+go 1.22
 
 require (
 	github.com/arttor/helmify v0.4.19
