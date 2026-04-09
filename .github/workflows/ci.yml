@@ -137,7 +137,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: wenwenxiong/helmforge
+          images: xiongwen/helmforge
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -160,7 +160,7 @@ jobs:
       - name: 扫描镜像安全漏洞
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: wenwenxiong/helmforge:latest
+          image-ref: xiongwen/helmforge:latest
           format: 'sarif'
           output: 'trivy-results.sarif'
 
