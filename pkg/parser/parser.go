@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -25,52 +24,48 @@ func ParseDockerCompose(filePath string) (*models.DockerComposeConfig, error) {
 	}
 
 	// 预处理环境变量：将数组格式转换为map格式
-	// 创建新的服务map来避免指针和拷贝问题
+	// Go语言规范：len()对nil切片返回0，因此只需要检查len > 0
+	// 这样可以同时处理nil和[]string{}两种情况
 	processedServices := make(map[string]models.Service)
 	for serviceName, service := range config.Services {
-		processedService := service // 创建副本
+		// 创建服务副本，避免range循环中修改原map导致副作用
+		processedService := service
 
-		// 添加调试信息
-		fmt.Printf("处理服务: %s\n", serviceName)
-		fmt.Printf("  Environment: %v (len: %d, isNil: %v)\n",
-			processedService.Environment, len(processedService.Environment),
-			processedService.Environment == nil)
-		fmt.Printf("  DependsOn: %v (len: %d)\n",
-			processedService.DependsOn, len(processedService.DependsOn))
-
-		// 特殊处理：区分nil和[]string{}的情况
-		if processedService.Environment != nil && len(processedService.Environment) > 0 {
-			fmt.Printf("  开始处理环境变量...\n")
+		// 处理环境变量数组格式：[KEY=VALUE, ...]
+		// 转换为map格式：EnvVars: {KEY: VALUE, ...}
+		if len(processedService.Environment) > 0 {
 			envMap := make(map[string]string)
+
+			// 解析每个环境变量
 			for _, env := range processedService.Environment {
-				// 解析 KEY=VALUE 格式
+				// 支持两种格式：KEY=VALUE 和 KEY
 				if strings.Contains(env, "=") {
+					// 格式：KEY=VALUE
 					parts := strings.SplitN(env, "=", 2)
 					if len(parts) == 2 {
 						envMap[parts[0]] = parts[1]
+					} else {
+						// 格式不正确，忽略这个环境变量
+						continue
 					}
 				} else {
-					// 处理只有KEY的情况
+					// 格式：KEY（只有键名，值为空字符串）
 					envMap[env] = ""
 				}
 			}
-			// 转换为map格式
+
+			// 转换为map格式：清空Environment数组，设置EnvVars map
 			processedService.Environment = nil
 			processedService.EnvVars = envMap
-			fmt.Printf("  环境变量处理完成: %d个变量\n", len(envMap))
 		}
 
-		// 验证字段完整性
-		fmt.Printf("  处理后 DependsOn: %v (len: %d)\n",
-			processedService.DependsOn, len(processedService.DependsOn))
-
+		// 将处理后的服务添加到新的map中
 		processedServices[serviceName] = processedService
 	}
 
 	// 使用处理后的服务配置替换原有配置
+	// 这样可以确保所有服务字段都正确保留，避免range循环副作用
 	config.Services = processedServices
-
-	fmt.Printf("所有服务处理完成\n")
 
 	// 验证配置
 	if len(config.Services) == 0 {
