@@ -37,7 +37,7 @@ RUN curl -L https://github.com/kubernetes/kompose/releases/download/v1.32.0/komp
     && chmod +x /usr/local/bin/kompose
 
 # 安装helmify (如果需要)
-RUN curl -L https://github.com/arttor/helmify/releases/download/v0.4.19/helmify_0.4.19_linux_amd64.tar.gz -o helmify.tar.gz \
+RUN curl -L https://github.com/arttor/helmify/releases/download/v0.4.19/helmify_Linux_x86_64.tar.gz -o helmify.tar.gz \
     && tar -xzf helmify.tar.gz \
     && mv helmify /usr/local/bin/ \
     && chmod +x /usr/local/bin/helmify \
