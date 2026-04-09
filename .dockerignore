@@ -2,8 +2,6 @@
 helmforge
 output-chart/
 
-# 忽略依赖目录
-go.sum
 
 # 忽略IDE和编辑器文件
 .vscode/
