@@ -24,10 +24,14 @@ func ParseDockerCompose(filePath string) (*models.DockerComposeConfig, error) {
 	}
 
 	// 预处理环境变量：将数组格式转换为map格式
+	// 使用新的map来避免直接修改原有数据
+	processedServices := make(map[string]models.Service)
 	for serviceName, service := range config.Services {
-		if len(service.Environment) > 0 {
+		processedService := service // 创建副本
+
+		if len(processedService.Environment) > 0 {
 			envMap := make(map[string]string)
-			for _, env := range service.Environment {
+			for _, env := range processedService.Environment {
 				// 解析 KEY=VALUE 格式
 				if strings.Contains(env, "=") {
 					parts := strings.SplitN(env, "=", 2)
@@ -40,11 +44,15 @@ func ParseDockerCompose(filePath string) (*models.DockerComposeConfig, error) {
 				}
 			}
 			// 转换为map格式
-			service.Environment = nil
-			service.EnvVars = envMap
-			config.Services[serviceName] = service
+			processedService.Environment = nil
+			processedService.EnvVars = envMap
 		}
+
+		processedServices[serviceName] = processedService
 	}
+
+	// 使用处理后的服务配置替换原有配置
+	config.Services = processedServices
 
 	// 验证配置
 	if len(config.Services) == 0 {
