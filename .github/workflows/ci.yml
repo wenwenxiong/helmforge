@@ -26,9 +26,20 @@ jobs:
       - name: 初始化 Submodules
         run: |
           bash .github/scripts/setup-submodules.sh
-        continue-on-error: true
+          # Explicitly verify submodules were initialized
+          test -d third-party/kompose && test -d third-party/helmify
         timeout-minutes: 15
         shell: bash
+
+      - name: 验证依赖目录
+        run: |
+          echo "=== Verifying third-party directories ==="
+          ls -la third-party/
+          test -d third-party/kompose && echo "✅ kompose exists"
+          test -d third-party/helmify && echo "✅ helmify exists"
+          # Verify they contain actual code
+          test -f third-party/kompose/go.mod && echo "✅ kompose has go.mod"
+          test -f third-party/helmify/go.mod && echo "✅ helmify has go.mod"
 
       - name: 设置 Go 环境
         uses: actions/setup-go@v5
@@ -42,6 +53,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
+            # Cache third-party directories too
+            third-party/kompose
+            third-party/helmify
           key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-${{ matrix.go-version }}-
@@ -83,8 +97,16 @@ jobs:
           fail_ci_if_error: false
 
       - name: 构建项目
-        working-directory: ./
         run: |
+          echo "Current directory: $(pwd)"
+          echo "=== Directory structure ==="
+          ls -la
+          echo "=== cmd/helmforge ==="
+          ls -la cmd/helmforge/
+          echo "=== third-party ==="
+          ls -la third-party/ || echo "⚠️ third-party missing"
+          
+          # Try the build
           go build -v -ldflags="-w -s" -o helmforge ./cmd/helmforge
           ./helmforge --version || true
 
