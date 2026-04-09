@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/arttor/helmify/pkg/helmify"
+	helmifyapp "github.com/arttor/helmify/pkg/app"
+	helmifyconfig "github.com/arttor/helmify/pkg/config"
 	"github.com/wenwenxiong/HelmForge/pkg/kompose"
 	"gopkg.in/yaml.v3"
 )
@@ -87,16 +88,15 @@ func ConvertToHelmChartWithOptions(resources []kompose.KubernetesResource, optio
 	return nil
 }
 
-// RunHelmify 运行 helmify 命令
-func RunHelmify(resources []kompose.KubernetesResource, options HelmifyOptions) error {
-	fmt.Println("执行 helmify 命令...")
+// IsHelmifyInstalled 检查 helmify 工具是否已安装
+func IsHelmifyInstalled() bool {
+	_, err := exec.LookPath("helmify")
+	return err == nil
+}
 
-	// 检查 helmify 是否已安装
-	if !IsHelmifyInstalled() {
-		return fmt.Errorf("helmify 工具未安装，请先安装 helmify (https://github.com/mumoshu/helmify)")
-	}
-
-	// 为转换创建临时目录
+// convertUsingHelmifyPackage 使用 helmify Go 包进行转换
+func convertUsingHelmifyPackage(resources []kompose.KubernetesResource, options HelmifyOptions) error {
+	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "helmforge-helmify-")
 	if err != nil {
 		return fmt.Errorf("创建临时目录失败: %v", err)
@@ -126,6 +126,59 @@ func RunHelmify(resources []kompose.KubernetesResource, options HelmifyOptions) 
 		if err := os.WriteFile(filePath, content, 0644); err != nil {
 			return fmt.Errorf("写入临时文件失败: %v", err)
 		}
+	}
+
+	// 调用 helmify 包处理
+	helmifyConfig := helmifyconfig.Config{
+		ChartName:        options.ChartName,
+		ChartDir:         options.OutputDir,
+		Files:            []string{k8sDir},
+		FilesRecursively: true,
+		OriginalName:     true,
+		PreserveNs:       options.Namespace != "",
+		AddWebhookOption: false,
+		GenerateDefaults: true,
+	}
+
+	err = helmifyapp.Start(nil, helmifyConfig)
+	if err != nil {
+		return fmt.Errorf("helmify 包转换失败: %v", err)
+	}
+
+	// 更新 Chart.yaml 中的版本信息
+	chartFile := filepath.Join(options.OutputDir, options.ChartName, "Chart.yaml")
+	if _, err := os.Stat(chartFile); err == nil {
+		content, err := os.ReadFile(chartFile)
+		if err == nil {
+			var chartConfig map[string]interface{}
+			if err := yaml.Unmarshal(content, &chartConfig); err == nil {
+				if options.ChartVersion != "" {
+					chartConfig["version"] = options.ChartVersion
+				}
+				if options.AppVersion != "" {
+					chartConfig["appVersion"] = options.AppVersion
+				}
+				if options.Description != "" {
+					chartConfig["description"] = options.Description
+				}
+
+				updatedContent, _ := yaml.Marshal(chartConfig)
+				os.WriteFile(chartFile, updatedContent, 0644)
+			}
+		}
+	}
+
+	fmt.Printf("✓ helmify 包转换成功，输出目录: %s\n", options.OutputDir)
+	return nil
+}
+
+// RunHelmify 运行 helmify 命令
+func RunHelmify(resources []kompose.KubernetesResource, options HelmifyOptions) error {
+	fmt.Println("执行 helmify 命令...")
+
+	// 检查 helmify 是否已安装
+	if !IsHelmifyInstalled() {
+		return fmt.Errorf("helmify 工具未安装，请先安装 helmify (https://github.com/mumoshu/helmify)")
 	}
 
 	// 为转换创建临时目录
@@ -406,18 +459,6 @@ func createTemplateFiles(outputDir string, resources []kompose.KubernetesResourc
 		if err := os.WriteFile(filePath, content, 0644); err != nil {
 			return fmt.Errorf("写入模板文件失败: %v", err)
 		}
-
-		fmt.Printf("✓ 生成模板文件: %s\n", fileName)
-	}
-
-	return nil
-}
-
-		fmt.Printf("✓ 生成模板文件: %s\n", fileName)
-	}
-
-	return nil
-}
 
 		fmt.Printf("✓ 生成模板文件: %s\n", fileName)
 	}

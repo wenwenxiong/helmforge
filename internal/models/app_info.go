@@ -2,7 +2,7 @@ package models
 
 // DockerComposeConfig Docker Compose 配置结构
 type DockerComposeConfig struct {
-	Version  string            `json:"version"`
+	Version  string             `json:"version"`
 	Services map[string]Service `json:"services"`
 	Networks map[string]Network `json:"networks,omitempty"`
 	Volumes  map[string]Volume  `json:"volumes,omitempty"`
@@ -10,13 +10,13 @@ type DockerComposeConfig struct {
 
 // Service 服务结构
 type Service struct {
-	Image       string            `json:"image,omitempty"`
-	Build       *BuildConfig      `json:"build,omitempty"`
-	Ports       []string          `json:"ports,omitempty"`
-	Environment map[string]string `json:"environment,omitempty"`
-	Volumes     []string          `json:"volumes,omitempty"`
-	Networks    []string          `json:"networks,omitempty"`
-	DependsOn   []string          `json:"depends_on,omitempty"`
+	Image       string             `json:"image,omitempty"`
+	Build       *BuildConfig       `json:"build,omitempty"`
+	Ports       []string           `json:"ports,omitempty"`
+	Environment map[string]string  `json:"environment,omitempty"`
+	Volumes     []string           `json:"volumes,omitempty"`
+	Networks    []string           `json:"networks,omitempty"`
+	DependsOn   []string           `json:"depends_on,omitempty"`
 	Healthcheck *HealthcheckConfig `json:"healthcheck,omitempty"`
 }
 
@@ -38,15 +38,15 @@ type HealthcheckConfig struct {
 
 // Network 网络结构
 type Network struct {
-	Driver  string            `json:"driver,omitempty"`
-	External bool             `json:"external,omitempty"`
-	Name    string            `json:"name,omitempty"`
-	IPAM    *IPAMConfig       `json:"ipam,omitempty"`
+	Driver   string      `json:"driver,omitempty"`
+	External bool        `json:"external,omitempty"`
+	Name     string      `json:"name,omitempty"`
+	IPAM     *IPAMConfig `json:"ipam,omitempty"`
 }
 
 // IPAMConfig IPAM 配置结构
 type IPAMConfig struct {
-	Driver string   `json:"driver,omitempty"`
+	Driver string     `json:"driver,omitempty"`
 	Config []IPConfig `json:"config,omitempty"`
 }
 
@@ -58,8 +58,8 @@ type IPConfig struct {
 
 // Volume 卷结构
 type Volume struct {
-	Driver   string            `json:"driver,omitempty"`
-	External bool              `json:"external,omitempty"`
-	Name     string            `json:"name,omitempty"`
+	Driver     string            `json:"driver,omitempty"`
+	External   bool              `json:"external,omitempty"`
+	Name       string            `json:"name,omitempty"`
 	DriverOpts map[string]string `json:"driver_opts,omitempty"`
 }
