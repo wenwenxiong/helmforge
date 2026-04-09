@@ -171,7 +171,7 @@ services:
 
 	// 验证健康检查配置
 	healthcheck := config.Services["app"].Healthcheck
-	assert.Len(t, healthcheck.Test, 3, "测试命令应该有3个部分")
+	assert.Len(t, healthcheck.Test, 4, "测试命令应该有4个部分")
 	assert.Equal(t, "30s", healthcheck.Interval, "间隔时间应该正确")
 	assert.Equal(t, "10s", healthcheck.Timeout, "超时时间应该正确")
 	assert.Equal(t, 3, healthcheck.Retries, "重试次数应该正确")
