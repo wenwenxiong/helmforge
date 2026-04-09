@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -31,9 +32,16 @@ func ParseDockerCompose(filePath string) (*models.DockerComposeConfig, error) {
 		// 创建服务副本，避免range循环中修改原map导致副作用
 		processedService := service
 
+		// 调试信息：显示服务名称和关键字段状态
+		fmt.Printf("=== 处理服务: %s ===\n", serviceName)
+		fmt.Printf("处理前 - Image: %s\n", processedService.Image)
+		fmt.Printf("处理前 - Environment: %v (len: %d)\n", processedService.Environment, len(processedService.Environment))
+		fmt.Printf("处理前 - DependsOn: %v (len: %d)\n", processedService.DependsOn, len(processedService.DependsOn))
+
 		// 处理环境变量数组格式：[KEY=VALUE, ...]
 		// 转换为map格式：EnvVars: {KEY: VALUE, ...}
 		if len(processedService.Environment) > 0 {
+			fmt.Printf("开始处理环境变量，数量: %d\n", len(processedService.Environment))
 			envMap := make(map[string]string)
 
 			// 解析每个环境变量
@@ -57,7 +65,14 @@ func ParseDockerCompose(filePath string) (*models.DockerComposeConfig, error) {
 			// 转换为map格式：清空Environment数组，设置EnvVars map
 			processedService.Environment = nil
 			processedService.EnvVars = envMap
+			fmt.Printf("环境变量处理完成: %d个变量\n", len(envMap))
 		}
+
+		// 验证关键字段完整性
+		fmt.Printf("处理后 - Image: %s\n", processedService.Image)
+		fmt.Printf("处理后 - Environment: %v (len: %d)\n", processedService.Environment, len(processedService.Environment))
+		fmt.Printf("处理后 - DependsOn: %v (len: %d)\n", processedService.DependsOn, len(processedService.DependsOn))
+		fmt.Printf("处理后 - EnvVars: %v (len: %d)\n\n", processedService.EnvVars, len(processedService.EnvVars))
 
 		// 将处理后的服务添加到新的map中
 		processedServices[serviceName] = processedService
