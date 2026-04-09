@@ -162,8 +162,12 @@ func convertUsingHelmifyPackage(resources []kompose.KubernetesResource, options 
 					chartConfig["description"] = options.Description
 				}
 
-				updatedContent, _ := yaml.Marshal(chartConfig)
-				os.WriteFile(chartFile, updatedContent, 0644)
+				updatedContent, err := yaml.Marshal(chartConfig)
+				if err != nil {
+					fmt.Printf("警告: 序列化Chart配置失败: %v\n", err)
+				} else if err := os.WriteFile(chartFile, updatedContent, 0644); err != nil {
+					fmt.Printf("警告: 写入Chart配置文件失败: %v\n", err)
+				}
 			}
 		}
 	}
@@ -254,8 +258,12 @@ func RunHelmify(resources []kompose.KubernetesResource, options HelmifyOptions) 
 					chartConfig["description"] = options.Description
 				}
 
-				updatedContent, _ := yaml.Marshal(chartConfig)
-				os.WriteFile(chartFile, updatedContent, 0644)
+				updatedContent, err := yaml.Marshal(chartConfig)
+				if err != nil {
+					fmt.Printf("警告: 序列化Chart配置失败: %v\n", err)
+				} else if err := os.WriteFile(chartFile, updatedContent, 0644); err != nil {
+					fmt.Printf("警告: 写入Chart配置文件失败: %v\n", err)
+				}
 			}
 		}
 	}

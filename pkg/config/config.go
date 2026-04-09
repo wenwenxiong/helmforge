@@ -337,14 +337,12 @@ func addEnvFromValues(content string) string {
         - name: CONFIG_FROM_CONFIGMAP
           valueFrom:
             configMapKeyRef:
-              name: "{{ include \"helmforge.configmap.name\" . }}"
-              key: config-key
+               name: "{{ include \"helmforge.configmap.name\" . }}"
+               key: config-key
 `
 
 		// 在 env: 之后插入增强的环境变量配置
-		if strings.Contains(content, "env:") {
-			content = strings.Replace(content, "env:", envSection+"\n        env:", 1)
-		}
+		content = strings.Replace(content, "env:", envSection+"\n        env:", 1)
 	}
 
 	return content

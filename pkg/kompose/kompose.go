@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	// "github.com/kubernetes/kompose/pkg/kobject" // 暂时禁用，包接口已变更
@@ -373,7 +374,9 @@ func generateService(serviceName string, service models.Service) KubernetesResou
 
 // parseInt 将字符串转换为整数
 func parseInt(s string) int {
-	var i int
-	fmt.Sscanf(s, "%d", &i)
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0 // 解析失败时返回默认值
+	}
 	return i
 }

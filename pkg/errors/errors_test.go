@@ -31,7 +31,7 @@ func TestHelmForgeError_Unwrap(t *testing.T) {
 func TestHelmForgeError_WithDetails(t *testing.T) {
 	helmErr := New(ErrCodeInvalidConfig, "配置无效")
 	details := map[string]string{"field": "port", "value": "abc"}
-	helmErr.WithDetails(details)
+	helmErr = helmErr.WithDetails(details)
 
 	assert.Equal(t, details, helmErr.Details)
 }
