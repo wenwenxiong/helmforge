@@ -113,8 +113,6 @@ func ParseDockerCompose(filePath string) (*models.DockerComposeConfig, error) {
 		return nil, errors.InvalidConfig("Docker Compose 文件中没有定义服务")
 	}
 
-	return &config, nil
-
 	fmt.Printf("=== 环境变量预处理完成 ===\n")
 	fmt.Printf("最终服务数量: %d\n", len(config.Services))
 
